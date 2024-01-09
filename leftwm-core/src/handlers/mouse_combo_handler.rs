@@ -52,14 +52,27 @@ impl State {
         modifier: ModMask,
     ) -> Option<DisplayAction> {
         let is_mouse_key = mod_mask == modifier || mod_mask == (modifier | xlib::ShiftMask);
+        let is_shift_key = mod_mask == (modifier | xlib::ShiftMask);
         match button {
             xlib::Button1 if is_mouse_key => {
-                _ = self
-                    .windows
-                    .iter()
-                    .find(|w| w.handle == window && w.can_move())?;
-                self.mode = Mode::ReadyToMove(window);
-                Some(DisplayAction::ReadyToMoveWindow(window))
+                match is_shift_key {
+                    true => {
+                        _ = self
+                            .windows
+                            .iter()
+                            .find(|w| w.handle == window && w.can_resize())?;
+                        self.mode = Mode::ReadyToResize(window);
+                        Some(DisplayAction::ReadyToResizeWindow(window))
+                    }
+                    false => {
+                        _ = self
+                            .windows
+                            .iter()
+                            .find(|w| w.handle == window && w.can_move())?;
+                        self.mode = Mode::ReadyToMove(window);
+                        Some(DisplayAction::ReadyToMoveWindow(window))
+                    }
+                }
             }
             xlib::Button3 if is_mouse_key => {
                 _ = self
